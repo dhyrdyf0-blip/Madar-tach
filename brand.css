@@ -1,0 +1,78 @@
+/* Madar Tech shared visual identity */
+:root {
+  --brand-navy: #03213D;
+  --brand-white: #FFFFFF;
+  --brand-lime: #D5E159;
+  --brand-soft: color-mix(in srgb, var(--brand-navy) 4%, var(--brand-white));
+  --brand-border: color-mix(in srgb, var(--brand-navy) 18%, var(--brand-white));
+  --brand-muted: color-mix(in srgb, var(--brand-navy) 72%, var(--brand-white));
+  --brand-tint: color-mix(in srgb, var(--brand-lime) 22%, var(--brand-white));
+  --bs-body-color: var(--brand-navy);
+  --bs-body-bg: var(--brand-white);
+  --bs-primary: var(--brand-navy);
+  --bs-border-color: var(--brand-border);
+}
+body { color:var(--brand-navy); background:var(--brand-white); }
+::selection { background:var(--brand-lime); color:var(--brand-navy); }
+a { color:var(--brand-navy); }
+a:focus-visible, button:focus-visible, .btn:focus-visible {
+  outline:3px solid var(--brand-lime); outline-offset:4px;
+  box-shadow:0 0 0 6px var(--brand-navy);
+}
+.navbar { --bs-navbar-color:var(--brand-white); --bs-navbar-hover-color:var(--brand-lime); background:var(--brand-navy); border-bottom:2px solid var(--brand-lime); }
+.navbar .nav-link { color:var(--brand-white); }
+.navbar .nav-link:hover,.navbar .nav-link:focus { color:var(--brand-lime); }
+.navbar-brand,.brand { display:inline-flex; align-items:center; justify-content:center; background:var(--brand-white); padding:7px 12px; border-radius:10px; flex-shrink:0; }
+.navbar-brand img { display:block; width:140px; height:70px; object-fit:contain; }
+.brand img { display:block; width:170px; height:auto; }
+.hero { padding-top:120px; }
+.hero p { max-width:780px; margin-inline:auto; line-height:2; }
+.hero h1 { line-height:1.6; }
+.btn-lime,.button,button { background:var(--brand-lime); color:var(--brand-navy); }
+.btn-lime:hover,.btn-lime:focus-visible,.button:hover,button:hover { background:var(--brand-navy); color:var(--brand-white); box-shadow:inset 0 0 0 1px var(--brand-lime); }
+.btn-dark-blue { background:var(--brand-navy); color:var(--brand-white); border:1px solid var(--brand-navy); }
+.btn-dark-blue:hover,.btn-dark-blue:focus-visible { background:var(--brand-lime); color:var(--brand-navy); border-color:var(--brand-navy); }
+.btn-light { background:var(--brand-white); color:var(--brand-navy); border-color:var(--brand-white); }
+.btn-light:hover { background:var(--brand-lime); color:var(--brand-navy); border-color:var(--brand-lime); }
+.navbar-toggler { background:var(--brand-navy); color:var(--brand-white); border-color:var(--brand-lime); }
+.gray,.box { background:var(--brand-soft); }
+.box,.service,.card { border-radius:12px; }
+.service,.card { background:var(--brand-white); border-color:var(--brand-border); }
+.service { border-top-color:var(--brand-lime); }
+.card { border-top:4px solid var(--brand-lime); height:calc(100% - 20px); }
+.card-title { direction:initial; overflow-wrap:anywhere; }
+.features li { background:color-mix(in srgb,var(--brand-white) 8%,var(--brand-navy)); }
+.form-control { background:var(--brand-white); color:var(--brand-navy); border-color:var(--brand-border); }
+.form-control:focus { border-color:var(--brand-navy); box-shadow:0 0 0 3px var(--brand-tint); }
+#error { color:var(--brand-navy); font-weight:bold; }
+#error:not(:empty) { border-right:4px solid var(--brand-lime); background:var(--brand-tint); padding:12px; }
+.footer { border-top:3px solid var(--brand-lime); }
+.copy { border-color:color-mix(in srgb,var(--brand-white) 30%,var(--brand-navy)); }
+body:has(aside) { background:var(--brand-soft); }
+aside { border-left:2px solid var(--brand-lime); }
+aside small { color:var(--brand-white); }
+header p,.section-head p,footer,th,td p { color:var(--brand-muted); }
+nav a:hover,nav a:focus-visible { background:color-mix(in srgb,var(--brand-white) 8%,var(--brand-navy)); color:var(--brand-lime); }
+.notice { background:var(--brand-tint); border-color:var(--brand-lime); }
+.stats article,.panel { border-color:var(--brand-border); }
+.stats strong { color:var(--brand-navy); }
+.stats article:first-child strong { color:var(--brand-lime); }
+.secondary { background:var(--brand-white); color:var(--brand-navy); box-shadow:inset 0 0 0 1px var(--brand-border); }
+input,textarea,select { background:var(--brand-white); color:var(--brand-navy); border-color:var(--brand-border); }
+input:focus,textarea:focus,select:focus { outline-color:var(--brand-navy); }
+th { background:var(--brand-soft); }
+th,td { border-color:var(--brand-border); }
+.badge { background:var(--brand-lime); color:var(--brand-navy); }
+.badge.draft { background:var(--brand-white); color:var(--brand-navy); border:1px solid var(--brand-border); }
+.delete { background:var(--brand-navy); color:var(--brand-white); }
+.delete:hover { background:var(--brand-lime); color:var(--brand-navy); }
+button:disabled { opacity:.55; cursor:not-allowed; }
+@media(max-width:768px) {
+  .navbar-brand img { width:120px; height:60px; }
+  .hero { padding-top:110px; }
+  section { scroll-margin-top:100px; }
+}
+@media(prefers-reduced-motion:reduce) {
+  html { scroll-behavior:auto; }
+  *,*::before,*::after { transition:none!important; animation:none!important; }
+}
