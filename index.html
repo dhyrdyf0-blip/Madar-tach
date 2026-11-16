@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>مدار تك</title>
+
+  <!-- ملف Bootstrap (نسخة تدعم العربية RTL) -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.rtl.min.css">
+  <!-- ملف التنسيق الخاص بنا (يجب أن يكون بعد Bootstrap) -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- ========== 1) شريط التنقل ========== -->
+  <nav class="navbar navbar-expand-lg fixed-top">
+    <div class="container">
+      <a class="navbar-brand" href="#home" alt="img.jpg" >
+        <img src="img.jpg" alt="MADAR TECh" width="150">
+      </a>
+
+      <!-- زر القائمة (يظهر في الموبايل فقط) -->
+      <button class="navbar-toggler" id="menuBtn" type="button">☰</button>
+
+      <!-- القائمة -->
+      <div class="collapse navbar-collapse" id="menu">
+        <ul class="navbar-nav mx-auto">
+          <li class="nav-item"><a class="nav-link" href="#home">الرئيسية</a></li>
+          <li class="nav-item"><a class="nav-link" href="#about">من نحن</a></li>
+          <li class="nav-item"><a class="nav-link" href="#services">خدماتنا</a></li>
+          <li class="nav-item"><a class="nav-link" href="#programs">البرامج التدريبية</a></li>
+          <li class="nav-item"><a class="nav-link" href="#contact">تواصل معنا</a></li>
+        </ul>
+        <a href="#contact" class="btn btn-lime">احجز الآن</a>
+      </div>
+    </div>
+  </nav>
+
+  <main>
+
+    <!-- ========== 2) الواجهة الرئيسية ========== -->
+    <section id="home" class="hero">
+      <div class="container">
+        <h1>مساحتك للتعلّم، التطور، وصناعة الفرص</h1>
+        <p>مدار تك مؤسسة تعليمية وتدريبية في خانيونس، نعمل على توفير بيئة تساعد الطلاب والخريجين والشباب على تطوير مهاراتهم، واكتساب الخبرات العملية، والانطلاق نحو فرص جديدة</p>
+        <div class="hero-buttons">
+          <a href="#services" class="btn btn-lime">اكتشف خدماتنا</a>
+          <a href="#contact" class="btn btn-light">تواصل معنا</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== 3) من نحن ========== -->
+    <section id="about" class="section">
+      <div class="container">
+        <h2>نتعلم اليوم لنصنع فرص الغد.</h2>
+        <p class="text-center">مدار تك مؤسسة تعليمية وتدريبية تسعى إلى ربط المعرفة الأكاديمية بالتطبيق العملي، من خلال تقديم برامج تدريبية وأنشطة تعليمية تساعد الشباب على تطوير قدراتهم ومواكبة متطلبات سوق العمل.</p>
+
+        <!-- صف فيه عمودان: كل عمود نصف الصفحة على الشاشات الكبيرة -->
+        <div class="row">
+          <div class="col-md-6">
+            <div class="box">
+              <h3>الرؤية</h3>
+              <p>أن نكون بيئة تعليمية وتدريبية تساهم في بناء جيل يمتلك المعرفة والمهارة والقدرة على صناعة الفرص.</p>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="box">
+              <h3>الرسالة</h3>
+              <p>توفير فرص تعليم وتدريب نوعية تساعد الأفراد على اكتشاف إمكاناتهم وتطوير مهاراتهم وتحويل المعرفة إلى تطبيق عملي.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== 4) خدماتنا ========== -->
+    <section id="services" class="section gray">
+      <div class="container">
+        <h2>خدماتنا</h2>
+        <div class="services">
+          <div class="service">
+            <h3>التدريب والتطوير</h3>
+            <p>برامج تدريبية متخصصة تهدف إلى تطوير المهارات التقنية والمهنية من خلال التعلم والتطبيق.</p>
+          </div>
+          <div class="service">
+            <h3>مساحات العمل المشتركة</h3>
+            <p>بيئة مناسبة للطلاب والمستقلين وأصحاب المشاريع لإنجاز أعمالهم وتبادل الأفكار.</p>
+          </div>
+          <div class="service">
+            <h3>القاعات التدريبية</h3>
+            <p>قاعات مجهزة لاستضافة الدورات التدريبية والاجتماعات والفعاليات والأنشطة.</p>
+          </div>
+          <div class="service">
+            <h3>الأنشطة التعليمية</h3>
+            <p>لقاءات ومبادرات تعليمية تساهم في نشر المعرفة وتبادل الخبرات.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== 5) البرامج التدريبية ========== -->
+    <section id="programs" class="section">
+      <div class="container">
+        <h2>طوّر مهاراتك وابدأ خطوتك القادمة</h2>
+        <div class="row">
+
+          <!-- بطاقة Bootstrap: ثلاث بطاقات، كل واحدة ثلث الصفحة -->
+          <div class="col-md-4">
+            <div class="card">
+              <div class="card-body">
+                <h3 class="card-title">Front-End Development</h3>
+                <p class="card-text">تعلم أساسيات تطوير واجهات المواقع الإلكترونية.</p>
+                <a href="#contact" class="btn btn-dark-blue">اعرف المزيد</a>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-md-4">
+            <div class="card">
+              <div class="card-body">
+                <h3 class="card-title">Artificial Intelligence</h3>
+                <p class="card-text">التعرف على أدوات الذكاء الاصطناعي وتطبيقاتها العملية.</p>
+                <a href="#contact" class="btn btn-dark-blue">اعرف المزيد</a>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-md-4">
+            <div class="card">
+              <div class="card-body">
+                <h3 class="card-title">Digital Skills</h3>
+                <p class="card-text">تطوير المهارات الرقمية واستخدام الأدوات التقنية.</p>
+                <a href="#contact" class="btn btn-dark-blue">اعرف المزيد</a>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== 6) لماذا مدار تك؟ ========== -->
+    <section id="why" class="section dark">
+      <div class="container">
+        <h2>لأن بيئة التعلم تصنع فرقاً.</h2>
+        <ul class="features">
+          <li>بيئة تعليمية محفزة.</li>
+          <li>إنترنت مستقر.</li>
+          <li>كهرباء متوفرة.</li>
+          <li>تدريب يجمع بين المعرفة والتطبيق.</li>
+          <li>فرصة للتواصل وتبادل الخبرات.</li>
+          <li>دعم وتوجيه خلال رحلة التعلم والتطوير.</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- ========== 7) تواصل معنا ========== -->
+    <section id="contact" class="section">
+      <div class="container">
+        <h2>خلينا نبدأ رحلتك مع بعض.</h2>
+        <p class="text-center">عندك استفسار عن برامجنا أو خدماتنا؟ تواصل معنا، وفريق مدار تك جاهز يساعدك.</p>
+
+        <form id="contactForm" class="contact-form">
+          <label for="name">الاسم</label>
+          <input type="text" id="name" class="form-control">
+
+          <label for="email">البريد الإلكتروني</label>
+          <input type="email" id="email" class="form-control">
+
+          <label for="phone">رقم الهاتف</label>
+          <input type="tel" id="phone" class="form-control">
+
+          <label for="message">الرسالة</label>
+          <textarea id="message" rows="4" class="form-control"></textarea>
+
+          <!-- رسالة الخطأ (مخفية في البداية) -->
+          <p id="error"></p>
+
+          <button type="submit" class="btn btn-dark-blue">إرسال</button>
+        </form>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ========== 8) الفوتر ========== -->
+  <footer class="footer">
+    <div class="container">
+      <h3>MADAR TECH</h3>
+      <p>مؤسسة تعليمية وتدريبية في خانيونس تربط المعرفة بالتطبيق العملي.</p>
+
+      <p>
+        <a href="#home">الرئيسية</a> |
+        <a href="#about">من نحن</a> |
+        <a href="#services">خدماتنا</a> |
+        <a href="#programs">البرامج التدريبية</a> |
+        <a href="#contact">تواصل معنا</a>
+      </p>
+
+      <p><a href="https://www.instagram.com/madar_tech0" target="_blank">Instagram</a></p>
+      <p><a href="mailto:madartech1@gmail.com">madartech1@gmail.com</a></p>
+      <p>خانيونس – بجانب المحكمة الشرعية.</p>
+      <p class="copy">حقوق النشر © Madar Tech</p>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
