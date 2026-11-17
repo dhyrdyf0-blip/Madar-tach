@@ -1,52 +1,35 @@
-"use strict";
-const $ = id => document.getElementById(id);
-let programs = [];
-let editing = null;
-let storageReady = true;
-try { programs = MadarPrograms.load(); } catch (_) {
-  storageReady = false;
-  $("feedback").textContent = "تعذّر قراءة البيانات المحلية. تأكد من السماح بالتخزين وفتح الموقع عبر Live Server. لم يتم استبدال بياناتك.";
-  $("programForm").querySelector("button[type=submit]").disabled = true;
-}
-function notify(message) { $("feedback").textContent = message; }
-function persist(next) {
-  if (!storageReady) return false;
-  try { MadarPrograms.save(next); programs = next; render(); return true; }
-  catch (_) { notify("تعذّر الحفظ في المتصفح. لم يتم حفظ التغيير؛ تحقق من إعدادات التخزين."); return false; }
-}
-function reset() { editing = null; $("programForm").reset(); $("editorTitle").textContent = "إضافة برنامج جديد"; }
-function render() {
-  $("total").textContent = programs.length;
-  $("published").textContent = programs.filter(p => p.status === "published").length;
-  $("drafts").textContent = programs.filter(p => p.status === "draft").length;
-  const query = $("search").value.trim().toLocaleLowerCase();
-  const filtered = programs.filter(p => p.title.toLocaleLowerCase().includes(query) && ($("filter").value === "all" || p.status === $("filter").value));
-  $("rows").replaceChildren(); $("empty").hidden = filtered.length > 0;
-  filtered.forEach(p => {
-    const row = document.createElement("tr");
-    const details = document.createElement("td");
-    const title = document.createElement("strong"); title.dir = "auto"; title.textContent = p.title;
-    const desc = document.createElement("p"); desc.textContent = p.description; details.append(title, desc);
-    const state = document.createElement("td"); const badge = document.createElement("span"); badge.className = "badge " + p.status; badge.textContent = p.status === "published" ? "ظاهر في الموقع" : "مسودة"; state.append(badge);
-    const actions = document.createElement("td"); const group = document.createElement("div"); group.className = "row-actions";
-    const edit = document.createElement("button"); edit.textContent = "تعديل"; edit.className = "secondary"; edit.setAttribute("aria-label", "تعديل " + p.title);
-    edit.onclick = () => { editing = p.id; $("title").value = p.title; $("description").value = p.description; $("status").value = p.status; $("editorTitle").textContent = "تعديل البرنامج"; $("editor").scrollIntoView({ behavior: "smooth" }); $("title").focus({ preventScroll: true }); };
-    const remove = document.createElement("button"); remove.textContent = "حذف"; remove.className = "delete"; remove.setAttribute("aria-label", "حذف " + p.title);
-    remove.onclick = () => { if (confirm('حذف البرنامج «' + p.title + '»؟') && persist(programs.filter(item => item.id !== p.id))) { if (editing === p.id) reset(); notify("تم حذف البرنامج من هذا المتصفح."); } };
-    group.append(edit, remove); actions.append(group); row.append(details, state, actions); $("rows").append(row);
-  });
-}
-$("programForm").addEventListener("submit", e => {
-  e.preventDefault();
-  const title = $("title").value.trim(), description = $("description").value.trim();
-  if (!title || !description) { notify("اكتب اسم البرنامج ووصفه."); return; }
-  const item = { id: editing || crypto.randomUUID(), title, description, status: $("status").value };
-  const next = editing ? programs.map(p => p.id === editing ? item : p) : [...programs, item];
-  if (persist(next)) { reset(); notify("تم الحفظ محليًا. ستظهر البرامج المنشورة في الموقع على المتصفح نفسه."); }
-});
-$("cancel").onclick = reset;
-$("newProgram").onclick = reset;
-$("search").addEventListener("input", render);
-$("filter").addEventListener("change", render);
-window.addEventListener("storage", e => { if (e.key === MadarPrograms.key || e.key === null) { try { programs = MadarPrograms.load(); reset(); render(); notify("تم تحديث القائمة من نافذة أخرى."); } catch (_) { notify("تعذّر قراءة التحديث من النافذة الأخرى. أعد تحميل الصفحة قبل التعديل."); storageReady = false; } } });
-render();
+(function(){
+'use strict';
+const S=MadarSite,$=id=>document.getElementById(id),page=document.body.dataset.page;
+let site,dirty=false,timer,blocked=false,theme=S.pref('theme','light'),counter=0;
+const el=(tag,cls,text)=>{const e=document.createElement(tag);if(cls)e.className=cls;if(text!==undefined)e.textContent=text;return e;};
+function notice(text){$('status').textContent=text;}
+function fail(text){$('error').hidden=!text;$('error').textContent=text;}
+function save(){clearTimeout(timer);if(blocked)return false;if(S.contrast(site.colors.navy,site.colors.white)<4.5||S.contrast(site.colors.navy,site.colors.lime)<4.5){fail('ألوان النص والخلفيات بحاجة لتباين أوضح. لم يتم الحفظ.');return false;}if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(site.contact.email)||(site.contact.whatsapp&&!/^\d{8,15}$/.test(site.contact.whatsapp))){fail('تحقق من البريد ورقم واتساب الدولي (8 إلى 15 رقمًا، أو اتركه فارغًا).');return false;}try{S.save(site);dirty=false;fail('');notice('✓ محفوظ محليًا · '+new Date().toLocaleTimeString('ar',{hour:'2-digit',minute:'2-digit'}));S.apply(site,theme);return true;}catch(_){fail('تعذّر الحفظ؛ صدّر نسخة من تعديلاتك وتحقق من إعدادات التخزين.');return false;}}
+function schedule(){dirty=true;notice('جارٍ حفظ التعديلات…');clearTimeout(timer);timer=setTimeout(save,450);}
+function button(text,fn,cls='small-button'){const b=el('button',cls,text);b.type='button';b.onclick=fn;return b;}
+function link(text,href,cls){const a=el('a',cls,text);a.href=href;return a;}
+function field(label,value,set,{multi=false,type='text',dir}={}){const l=el('label','field',label),i=el(multi?'textarea':'input');i.id='field-'+(++counter);if(!multi)i.type=type;i.value=value;i.maxLength=multi?6000:300;if(multi)i.rows=3;if(dir)i.dir=dir;i.oninput=()=>{set(i.value);schedule();};l.append(i);return l;}
+function pair(target,label,value,multi=false){const g=el('div','pair');g.append(field(label+' · العربية',value.ar,v=>value.ar=v,{multi,dir:'rtl'}),field(label+' · English',value.en,v=>value.en=v,{multi,dir:'ltr'}));target.append(g);}
+function check(text,value,set){const l=el('label','check');const i=el('input');i.type='checkbox';i.checked=value;i.onchange=()=>{set(i.checked);change();};l.append(i,el('span','',text));return l;}
+function panel(title,subtitle){const p=el('section','panel');p.append(el('h2','',title));if(subtitle)p.append(el('p','muted',subtitle));$('editor').append(p);return p;}
+function change(){dirty=true;save();render();}
+function stats(){const g=el('div','stats');const programs=site.sections.filter(s=>s.type==='programs').flatMap(s=>s.items);for(const [name,n,caption] of [['أقسام الموقع',site.sections.length,'محتوى قابل للتحرير'],['برامج تدريبية',programs.length,'بما فيها المسودات'],['برامج ظاهرة',site.sections.filter(s=>s.type==='programs'&&s.published).flatMap(s=>s.items).filter(p=>p.published).length,'ضمن أقسام ظاهرة'],['أقسام ظاهرة',site.sections.filter(s=>s.published).length,'في الصفحة الرئيسية']]){const a=el('article','stat');a.append(el('span','',name),el('strong','',String(n)),el('small','',caption));g.append(a);}$('editor').append(g);}
+function overview(){stats();const g=el('div','quick-grid');for(const [href,icon,title,body] of [['programs.html','▤','برامجك، في مكان واحد','أضف البرامج وحرّر تفاصيلها وحالة ظهورها.'],['content.html','✳','محتوى يصنع الفرق','عدّل الواجهة والأقسام، ورتّب قصتك كما تريد.'],['identity.html','◈','هوية تشبه مدار تك','لوحة ألوان موحدة واسم ووصف للمؤسسة.'],['contact.html','↗','تواصل أسهل','اضبط البريد وواتساب والعنوان.']]){const a=link('',href,'quick-card');a.append(el('span','quick-icon',icon),el('h2','',title),el('p','muted',body),el('span','quick-arrow','↗'));g.append(a);}$('editor').append(g);const p=panel('محتوى الموقع الآن','انتقل إلى صفحة المحتوى لتغيير ترتيب الأقسام أو ظهورها.');for(const s of site.sections){const r=el('div','overview-row');r.append(el('strong','',s.nav.ar||s.nav.en),el('span','badge',s.published?'ظاهر':'مسودة'));p.append(r);}}
+function identity(){const p=panel('ألوان الهوية','تُطبّق الألوان بعد حفظها تلقائيًا، مع التحقق من تباين النص.');const g=el('div','color-grid');for(const [k,label] of [['navy','الكحلي'],['white','الأبيض'],['lime','الأخضر الليموني']])g.append(field(label,site.colors[k],v=>site.colors[k]=v,{type:'color'}));p.append(g);const b=panel('اسم المؤسسة ووصفها');pair(b,'اسم المؤسسة',site.brand);pair(b,'وصف التذييل',site.tagline,true);}
+function contact(){const p=panel('قنوات التواصل','رقم واتساب دولي دون +. عند تركه فارغًا يستخدم نموذج التواصل البريد الإلكتروني.');p.append(field('البريد الإلكتروني',site.contact.email,v=>site.contact.email=v,{type:'email',dir:'ltr'}),field('رقم واتساب',site.contact.whatsapp,v=>site.contact.whatsapp=v,{type:'tel',dir:'ltr'}),field('رابط Instagram',site.contact.instagram,v=>site.contact.instagram=v,{type:'url',dir:'ltr'}));pair(p,'العنوان',site.contact.address);}
+function sectionEditor(s,index,openIds){const details=el('details','section-editor');details.dataset.id=s.id;details.open=openIds.has(s.id);const summary=el('summary');summary.append(el('strong','',s.nav.ar||s.nav.en||'قسم جديد'),el('span','badge',s.published?'ظاهر':'مسودة'));details.append(summary);const body=el('div','section-body'),actions=el('div','actions');actions.append(check('إظهار القسم',s.published,v=>s.published=v));const up=button('↑',()=>{[site.sections[index-1],site.sections[index]]=[site.sections[index],site.sections[index-1]];change();});up.disabled=index===0;up.setAttribute('aria-label','نقل القسم للأعلى');const down=button('↓',()=>{[site.sections[index+1],site.sections[index]]=[site.sections[index],site.sections[index+1]];change();});down.disabled=index===site.sections.length-1;down.setAttribute('aria-label','نقل القسم للأسفل');actions.append(up,down,button('حذف القسم',()=>{if(confirm('حذف القسم وجميع بطاقاته؟')){site.sections.splice(index,1);change();}},'delete'));body.append(actions);pair(body,'اسم القسم',s.nav);pair(body,'العنوان',s.title,true);pair(body,'الوصف',s.body,true);
+if(s.type!=='contact'){body.append(el('h3','',s.type==='programs'?'البرامج التدريبية':'البطاقات'));s.items.forEach((item,n)=>{const card=el('article','item-editor');const tools=el('div','actions');tools.append(el('strong','',(s.type==='programs'?'برنامج ':'بطاقة ')+(n+1)),check('ظاهر',item.published,v=>item.published=v),button('حذف',()=>{if(confirm('حذف هذه البطاقة؟')){s.items.splice(n,1);change();}},'delete'));card.append(tools);pair(card,'العنوان',item.title);pair(card,'المحتوى',item.body,true);body.append(card);});const add=button(s.type==='programs'?'＋ إضافة برنامج':'＋ إضافة بطاقة',()=>{s.items.push({id:'item-'+crypto.randomUUID(),title:S.pair('عنوان جديد','New title'),body:S.pair('اكتب المحتوى.','Write your content.'),published:false});change();},'button secondary');add.disabled=s.items.length>=60;body.append(add);}details.append(body);return details;}
+function sections(openIds){if(page==='content'){const h=panel('الواجهة الرئيسية');pair(h,'عبارة قصيرة',site.hero.eyebrow);pair(h,'العنوان الرئيسي',site.hero.title,true);pair(h,'الوصف الرئيسي',site.hero.body,true);}const p=panel(page==='programs'?'إدارة البرامج التدريبية':'إدارة أقسام الموقع','الأقسام والبطاقات الجديدة تُضاف كمسودات؛ فعّل ظهورها عندما تكون جاهزة.');const actions=el('div','add-section');const select=el('select');select.setAttribute('aria-label','نوع القسم');for(const [k,label] of (page==='programs'?[['programs','مجموعة برامج']]:[['text','قسم نصي'],['cards','خدمات'],['about','من نحن'],['features','مميزات'],['contact','تواصل']])){const o=el('option','',label);o.value=k;select.append(o);}const add=button('＋ إضافة قسم',()=>{const s={id:'section-'+crypto.randomUUID(),type:select.value,nav:S.pair('قسم جديد','New section'),title:S.pair('عنوان جديد','New title'),body:S.pair('وصف القسم.','Section description.'),published:false,items:[]};site.sections.push(s);openIds.add(s.id);dirty=true;save();render(openIds);},'button');add.disabled=site.sections.length>=30;actions.append(select,add);p.append(actions);let count=0;site.sections.forEach((s,i)=>{if((page==='programs')===(s.type==='programs')){p.append(sectionEditor(s,i,openIds));count++;}});if(!count)p.append(el('p','empty','لا توجد أقسام هنا بعد. أضف قسمًا للبدء.'));}
+function backup(){const p=panel('نسخة من عملك، دائمًا معك','التصدير ينزّل ملف JSON للإعدادات. الاستيراد يستبدل بيانات هذا المتصفح فقط بعد تأكيدك.');const actions=el('div','actions');actions.append(button('تصدير الإعدادات ↓',exportData,'button'));const input=el('input');input.type='file';input.accept='.json,application/json';input.id='importFile';input.onchange=async()=>{const f=input.files[0];if(!f)return;try{if(f.size>1000000)throw Error('حجم الملف كبير.');const data=JSON.parse(await f.text());if(!S.validate(data))throw Error('صيغة الإعدادات غير صالحة.');if(!confirm('استبدال البيانات الحالية؟'))return;const old=site;site=data;blocked=false;if(!save()){site=old;return;}render();}catch(e){fail('تعذّر الاستيراد: '+e.message);}finally{input.value='';}};const label=el('label','file-label','استيراد ملف الإعدادات');label.htmlFor=input.id;actions.append(label,input);p.append(actions);const reset=panel('استعادة المحتوى الافتراضي','صدّر نسخة أولًا إذا أردت الاحتفاظ بتعديلاتك.');reset.append(button('استعادة المحتوى الافتراضي',()=>{if(confirm('استبدال بيانات الموقع المحلية بالمحتوى الافتراضي؟')){const old=site;site=S.defaults();blocked=false;if(!save()){site=old;return;}render();}},'delete'));}
+function exportData(){const url=URL.createObjectURL(new Blob([JSON.stringify(site,null,2)],{type:'application/json'})),a=link('','',null);a.href=url;a.download='madar-site-settings.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
+function render(openIds){openIds=openIds||new Set([...document.querySelectorAll('details[open]')].map(x=>x.dataset.id));$('editor').replaceChildren();if(page==='overview')overview();else if(page==='identity')identity();else if(page==='contact')contact();else if(page==='backup')backup();else sections(openIds);$('editor').disabled=blocked;S.apply(site,theme);}
+$('saveNow').onclick=save;$('exportDraft').onclick=exportData;$('theme').onclick=()=>{theme=theme==='dark'?'light':'dark';S.setPref('theme',theme);S.apply(site,theme);$('theme').setAttribute('aria-pressed',String(theme==='dark'));};$('navToggle').onclick=()=>{const open=document.body.classList.toggle('nav-open');$('navToggle').setAttribute('aria-expanded',String(open));};
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){document.body.classList.remove('nav-open');$('navToggle').setAttribute('aria-expanded','false');}});
+$('editorForm').onsubmit=e=>{e.preventDefault();save();};
+document.querySelectorAll('a[href]').forEach(a=>a.addEventListener('click',e=>{if(dirty&&!save()&&!confirm('التعديلات لم تُحفظ. هل تريد مغادرة الصفحة؟'))e.preventDefault();}));
+window.addEventListener('beforeunload',e=>{if(dirty){e.preventDefault();e.returnValue='';}});
+window.addEventListener('storage',e=>{if(e.key!==S.key&&e.key!==null)return;if(dirty){blocked=true;clearTimeout(timer);$('editor').disabled=true;fail('تغيّرت البيانات من نافذة أخرى. صدّر مسودتك من زر «تصدير المسودة» ثم أعد تحميل الصفحة.');notice('توقف الحفظ لتجنب استبدال تعديلاتك');return;}try{site=S.load();render();notice('تم تحميل التحديث من نافذة أخرى.');}catch(_){blocked=true;$('editor').disabled=true;fail('تعذّر قراءة البيانات الجديدة. أعد تحميل الصفحة.');}});
+try{site=S.load();notice('جاهز · حفظ تلقائي');}catch(_){site=S.defaults();blocked=true;fail('تعذّر قراءة التخزين؛ لم تُستبدل بياناتك. تحقق من إعدادات المتصفح.');notice('تعذّر تحميل البيانات');}
+render();$('theme').setAttribute('aria-pressed',String(theme==='dark'));
+})();
