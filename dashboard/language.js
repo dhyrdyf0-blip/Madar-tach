@@ -202,6 +202,13 @@
     attributes.forEach((item) =>
       item.element.setAttribute(item.name, translate(item.original)),
     );
+    const languageButton = document.getElementById('languageToggle');
+    if (languageButton) {
+      languageButton.textContent = language === 'ar' ? 'English' : 'العربية';
+      languageButton.lang = language === 'ar' ? 'en' : 'ar';
+      languageButton.setAttribute('aria-label', language === 'ar' ? 'Switch to English' : 'التبديل إلى العربية');
+    }
+
   }
 
   window.DashboardLocale = {

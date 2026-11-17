@@ -476,6 +476,11 @@
     }
   });
   window.addEventListener('storage', (e) => {
+    if (e.key === 'madar.language') {
+      currentLanguage = siteStore.pref('language', 'ar') === 'en' ? 'en' : 'ar';
+      renderHomepage();
+      return;
+    }
     if (e.key === siteStore.key || e.key === null) {
       loadAndRenderHomepage();
     }

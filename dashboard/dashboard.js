@@ -645,6 +645,13 @@
     siteStore.apply(siteSettings, selectedTheme);
   }
   // ربط أحداث المستخدم والتنقل بين الصفحات.
+  getElement('languageToggle').onclick = () => {
+    const nextLanguage = dashboardLocale.language === 'ar' ? 'en' : 'ar';
+    siteStore.setPref('language', nextLanguage);
+    dashboardLocale.refresh();
+    renderPage();
+    updateSaveStatus(translateDashboard(hasUnsavedChanges ? 'جارٍ حفظ التعديلات…' : 'جاهز · حفظ تلقائي'));
+  };
   getElement('saveNow').onclick = saveChanges;
   getElement('exportDraft').onclick = exportSettings;
   getElement('theme').onclick = () => {
