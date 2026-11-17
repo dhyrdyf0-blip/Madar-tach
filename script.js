@@ -2,8 +2,15 @@
   'use strict';
   const S=window.MadarSite, $=id=>document.getElementById(id);
   let language=S.pref('language','ar')==='en'?'en':'ar';
-  let theme=S.pref('theme',window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');
+  let theme=S.pref('homepage-theme-v3','light')==='dark'?'dark':'light';
   let site;
+  let revealObserver;
+  function animateSections(){
+    if(revealObserver)revealObserver.disconnect();
+    if(!('IntersectionObserver' in window)||window.matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+    revealObserver=new IntersectionObserver(entries=>entries.forEach(entry=>{if(entry.isIntersecting){entry.target.classList.add('is-visible');revealObserver.unobserve(entry.target);}}),{threshold:0.08});
+    document.querySelectorAll('.content-section .wrap').forEach(el=>{el.classList.add('will-reveal');revealObserver.observe(el);});
+  }
   const ui={ar:{home:'الرئيسية',more:'اكتشف البرامج',contact:'تواصل معنا',learn:'اعرف المزيد',space:'خانيونس · تعلّم وتدريب وعمل مشترك',tag:'فضولك بداية كل فرصة ✳',strip:['تعلّم بالتطبيق','مساحات للعمل والتواصل','معرفة تصنع فرصًا'],dashboard:'لوحة التحكم',name:'الاسم',email:'البريد الإلكتروني',phone:'رقم الهاتف',message:'رسالتك',send:'إرسال عبر واتساب ↗',emailSend:'تجهيز رسالة بريد ↗',formNote:'سنفتح تطبيق التواصل لتراجع رسالتك وترسلها بنفسك.',emailReady:'تم تجهيز الرسالة في تطبيق البريد. أكمل الإرسال هناك.',popup:'تعذّر فتح نافذة واتساب؛ اسمح بالنوافذ المنبثقة ثم حاول مجددًا.',dark:'تفعيل الوضع الداكن',light:'تفعيل الوضع الفاتح',menu:'فتح القائمة',nav:'التنقل الرئيسي',skip:'انتقل للمحتوى',empty:'سيتم الإعلان عن برامج جديدة قريبًا.',copyright:'جميع الحقوق محفوظة',section:'قسم',loadError:'تعذّر قراءة تعديلات المتصفح. نعرض المحتوى الافتراضي دون تغيير بياناتك.'},en:{home:'Home',more:'Explore programs',contact:'Get in touch',learn:'Learn more',space:'Khan Younis · Learn, train & cowork',tag:'Curiosity is where opportunity begins ✳',strip:['Learn by doing','A space to work & connect','Knowledge into opportunity'],dashboard:'Dashboard',name:'Name',email:'Email address',phone:'Phone number',message:'Your message',send:'Continue on WhatsApp ↗',emailSend:'Prepare an email ↗',formNote:'Your messaging app will open so you can review and send your message.',emailReady:'Your message is ready in your email app. Complete sending it there.',popup:'WhatsApp could not open. Allow pop-ups and try again.',dark:'Enable dark mode',light:'Enable light mode',menu:'Open navigation',nav:'Main navigation',skip:'Skip to content',empty:'New programs will be announced soon.',copyright:'All rights reserved',section:'Section',loadError:'Could not read local edits. Showing default content without overwriting your data.'}};
   const t=p=>S.translate(p,language);
   const node=(tag,className,text)=>{const e=document.createElement(tag);if(className)e.className=className;if(text!==undefined)e.textContent=text;return e;};
@@ -77,9 +84,9 @@
     $('menu').replaceChildren(link(ui[language].home,'#home'),...published().map(s=>link(t(s.nav),'#'+s.id)));
     for(const key of ['eyebrow','title','body'])$('hero'+key[0].toUpperCase()+key.slice(1)).textContent=t(site.hero[key]);
     const program=firstType('programs');$('heroActions').replaceChildren(...(program?[link(ui[language].more,'#'+program.id,'button')]:[]),link(ui[language].contact,contactHref(),'button secondary'));
-    $('heroNote').textContent=ui[language].space;$('sceneTag').textContent=ui[language].tag;
+    $('heroNote').textContent=ui[language].space;$('sceneTag').textContent=ui[language].tag;const services=firstType('cards');const visibleServices=services?services.items.filter(i=>i.published):[];$('floatOne').textContent=visibleServices[0]?t(visibleServices[0].title):ui[language].strip[0];$('floatTwo').textContent=visibleServices[1]?t(visibleServices[1].title):ui[language].strip[1];
     $('identityStrip').replaceChildren(...ui[language].strip.map(text=>node('span','',text)));
-    $('sections').replaceChildren(...published().map(sectionView));
+    $('sections').replaceChildren(...published().map(sectionView));animateSections();
     $('footerTagline').textContent=t(site.tagline);$('dashboardLink').textContent=ui[language].dashboard;
     $('footerEmail').textContent=site.contact.email;$('footerEmail').href='mailto:'+site.contact.email;
     $('instagram').href=/^https:\/\/(www\.)?instagram\.com\//i.test(site.contact.instagram)?site.contact.instagram:'https://www.instagram.com/';
@@ -87,7 +94,7 @@
   }
   function reload(){try{site=S.load();notice('');}catch(_){site=S.defaults();notice(ui[language].loadError);}render();}
   $('language').onclick=()=>{language=language==='ar'?'en':'ar';S.setPref('language',language);render();};
-  $('theme').onclick=()=>{theme=theme==='dark'?'light':'dark';S.setPref('theme',theme);S.apply(site,theme);$('theme').setAttribute('aria-pressed',String(theme==='dark'));$('theme').setAttribute('aria-label',ui[language][theme==='dark'?'light':'dark']);$('theme').textContent=theme==='dark'?'☀':'◐';};
+  $('theme').onclick=()=>{theme=theme==='dark'?'light':'dark';S.setPref('homepage-theme-v3',theme);S.setPref('theme',theme);S.apply(site,theme);$('theme').setAttribute('aria-pressed',String(theme==='dark'));$('theme').setAttribute('aria-label',ui[language][theme==='dark'?'light':'dark']);$('theme').textContent=theme==='dark'?'☀':'◐';};
   $('menuBtn').onclick=()=>{$('menuBtn').setAttribute('aria-expanded',String($('menu').classList.toggle('open')));};
   $('menu').addEventListener('click',e=>{if(e.target.closest('a')){$('menu').classList.remove('open');$('menuBtn').setAttribute('aria-expanded','false');}});
   document.addEventListener('keydown',e=>{if(e.key==='Escape'){$('menu').classList.remove('open');$('menuBtn').setAttribute('aria-expanded','false');}});
