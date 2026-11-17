@@ -1,35 +1,634 @@
-(function(){
-'use strict';
-const S=MadarSite,$=id=>document.getElementById(id),page=document.body.dataset.page;
-let site,dirty=false,timer,blocked=false,theme=S.pref('theme','light'),counter=0;
-const el=(tag,cls,text)=>{const e=document.createElement(tag);if(cls)e.className=cls;if(text!==undefined)e.textContent=text;return e;};
-function notice(text){$('status').textContent=text;}
-function fail(text){$('error').hidden=!text;$('error').textContent=text;}
-function save(){clearTimeout(timer);if(blocked)return false;if(S.contrast(site.colors.navy,site.colors.white)<4.5||S.contrast(site.colors.navy,site.colors.lime)<4.5){fail('ألوان النص والخلفيات بحاجة لتباين أوضح. لم يتم الحفظ.');return false;}if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(site.contact.email)||(site.contact.whatsapp&&!/^\d{8,15}$/.test(site.contact.whatsapp))){fail('تحقق من البريد ورقم واتساب الدولي (8 إلى 15 رقمًا، أو اتركه فارغًا).');return false;}try{S.save(site);dirty=false;fail('');notice('✓ محفوظ محليًا · '+new Date().toLocaleTimeString('ar',{hour:'2-digit',minute:'2-digit'}));S.apply(site,theme);return true;}catch(_){fail('تعذّر الحفظ؛ صدّر نسخة من تعديلاتك وتحقق من إعدادات التخزين.');return false;}}
-function schedule(){dirty=true;notice('جارٍ حفظ التعديلات…');clearTimeout(timer);timer=setTimeout(save,450);}
-function button(text,fn,cls='small-button'){const b=el('button',cls,text);b.type='button';b.onclick=fn;return b;}
-function link(text,href,cls){const a=el('a',cls,text);a.href=href;return a;}
-function field(label,value,set,{multi=false,type='text',dir}={}){const l=el('label','field',label),i=el(multi?'textarea':'input');i.id='field-'+(++counter);if(!multi)i.type=type;i.value=value;i.maxLength=multi?6000:300;if(multi)i.rows=3;if(dir)i.dir=dir;i.oninput=()=>{set(i.value);schedule();};l.append(i);return l;}
-function pair(target,label,value,multi=false){const g=el('div','pair');g.append(field(label+' · العربية',value.ar,v=>value.ar=v,{multi,dir:'rtl'}),field(label+' · English',value.en,v=>value.en=v,{multi,dir:'ltr'}));target.append(g);}
-function check(text,value,set){const l=el('label','check');const i=el('input');i.type='checkbox';i.checked=value;i.onchange=()=>{set(i.checked);change();};l.append(i,el('span','',text));return l;}
-function panel(title,subtitle){const p=el('section','panel');p.append(el('h2','',title));if(subtitle)p.append(el('p','muted',subtitle));$('editor').append(p);return p;}
-function change(){dirty=true;save();render();}
-function stats(){const g=el('div','stats');const programs=site.sections.filter(s=>s.type==='programs').flatMap(s=>s.items);for(const [name,n,caption] of [['أقسام الموقع',site.sections.length,'محتوى قابل للتحرير'],['برامج تدريبية',programs.length,'بما فيها المسودات'],['برامج ظاهرة',site.sections.filter(s=>s.type==='programs'&&s.published).flatMap(s=>s.items).filter(p=>p.published).length,'ضمن أقسام ظاهرة'],['أقسام ظاهرة',site.sections.filter(s=>s.published).length,'في الصفحة الرئيسية']]){const a=el('article','stat');a.append(el('span','',name),el('strong','',String(n)),el('small','',caption));g.append(a);}$('editor').append(g);}
-function overview(){stats();const g=el('div','quick-grid');for(const [href,icon,title,body] of [['programs.html','▤','برامجك، في مكان واحد','أضف البرامج وحرّر تفاصيلها وحالة ظهورها.'],['content.html','✳','محتوى يصنع الفرق','عدّل الواجهة والأقسام، ورتّب قصتك كما تريد.'],['identity.html','◈','هوية تشبه مدار تك','لوحة ألوان موحدة واسم ووصف للمؤسسة.'],['contact.html','↗','تواصل أسهل','اضبط البريد وواتساب والعنوان.']]){const a=link('',href,'quick-card');a.append(el('span','quick-icon',icon),el('h2','',title),el('p','muted',body),el('span','quick-arrow','↗'));g.append(a);}$('editor').append(g);const p=panel('محتوى الموقع الآن','انتقل إلى صفحة المحتوى لتغيير ترتيب الأقسام أو ظهورها.');for(const s of site.sections){const r=el('div','overview-row');r.append(el('strong','',s.nav.ar||s.nav.en),el('span','badge',s.published?'ظاهر':'مسودة'));p.append(r);}}
-function identity(){const p=panel('ألوان الهوية','تُطبّق الألوان بعد حفظها تلقائيًا، مع التحقق من تباين النص.');const g=el('div','color-grid');for(const [k,label] of [['navy','الكحلي'],['white','الأبيض'],['lime','الأخضر الليموني']])g.append(field(label,site.colors[k],v=>site.colors[k]=v,{type:'color'}));p.append(g);const b=panel('اسم المؤسسة ووصفها');pair(b,'اسم المؤسسة',site.brand);pair(b,'وصف التذييل',site.tagline,true);}
-function contact(){const p=panel('قنوات التواصل','رقم واتساب دولي دون +. عند تركه فارغًا يستخدم نموذج التواصل البريد الإلكتروني.');p.append(field('البريد الإلكتروني',site.contact.email,v=>site.contact.email=v,{type:'email',dir:'ltr'}),field('رقم واتساب',site.contact.whatsapp,v=>site.contact.whatsapp=v,{type:'tel',dir:'ltr'}),field('رابط Instagram',site.contact.instagram,v=>site.contact.instagram=v,{type:'url',dir:'ltr'}));pair(p,'العنوان',site.contact.address);}
-function sectionEditor(s,index,openIds){const details=el('details','section-editor');details.dataset.id=s.id;details.open=openIds.has(s.id);const summary=el('summary');summary.append(el('strong','',s.nav.ar||s.nav.en||'قسم جديد'),el('span','badge',s.published?'ظاهر':'مسودة'));details.append(summary);const body=el('div','section-body'),actions=el('div','actions');actions.append(check('إظهار القسم',s.published,v=>s.published=v));const up=button('↑',()=>{[site.sections[index-1],site.sections[index]]=[site.sections[index],site.sections[index-1]];change();});up.disabled=index===0;up.setAttribute('aria-label','نقل القسم للأعلى');const down=button('↓',()=>{[site.sections[index+1],site.sections[index]]=[site.sections[index],site.sections[index+1]];change();});down.disabled=index===site.sections.length-1;down.setAttribute('aria-label','نقل القسم للأسفل');actions.append(up,down,button('حذف القسم',()=>{if(confirm('حذف القسم وجميع بطاقاته؟')){site.sections.splice(index,1);change();}},'delete'));body.append(actions);pair(body,'اسم القسم',s.nav);pair(body,'العنوان',s.title,true);pair(body,'الوصف',s.body,true);
-if(s.type!=='contact'){body.append(el('h3','',s.type==='programs'?'البرامج التدريبية':'البطاقات'));s.items.forEach((item,n)=>{const card=el('article','item-editor');const tools=el('div','actions');tools.append(el('strong','',(s.type==='programs'?'برنامج ':'بطاقة ')+(n+1)),check('ظاهر',item.published,v=>item.published=v),button('حذف',()=>{if(confirm('حذف هذه البطاقة؟')){s.items.splice(n,1);change();}},'delete'));card.append(tools);pair(card,'العنوان',item.title);pair(card,'المحتوى',item.body,true);body.append(card);});const add=button(s.type==='programs'?'＋ إضافة برنامج':'＋ إضافة بطاقة',()=>{s.items.push({id:'item-'+crypto.randomUUID(),title:S.pair('عنوان جديد','New title'),body:S.pair('اكتب المحتوى.','Write your content.'),published:false});change();},'button secondary');add.disabled=s.items.length>=60;body.append(add);}details.append(body);return details;}
-function sections(openIds){if(page==='content'){const h=panel('الواجهة الرئيسية');pair(h,'عبارة قصيرة',site.hero.eyebrow);pair(h,'العنوان الرئيسي',site.hero.title,true);pair(h,'الوصف الرئيسي',site.hero.body,true);}const p=panel(page==='programs'?'إدارة البرامج التدريبية':'إدارة أقسام الموقع','الأقسام والبطاقات الجديدة تُضاف كمسودات؛ فعّل ظهورها عندما تكون جاهزة.');const actions=el('div','add-section');const select=el('select');select.setAttribute('aria-label','نوع القسم');for(const [k,label] of (page==='programs'?[['programs','مجموعة برامج']]:[['text','قسم نصي'],['cards','خدمات'],['about','من نحن'],['features','مميزات'],['contact','تواصل']])){const o=el('option','',label);o.value=k;select.append(o);}const add=button('＋ إضافة قسم',()=>{const s={id:'section-'+crypto.randomUUID(),type:select.value,nav:S.pair('قسم جديد','New section'),title:S.pair('عنوان جديد','New title'),body:S.pair('وصف القسم.','Section description.'),published:false,items:[]};site.sections.push(s);openIds.add(s.id);dirty=true;save();render(openIds);},'button');add.disabled=site.sections.length>=30;actions.append(select,add);p.append(actions);let count=0;site.sections.forEach((s,i)=>{if((page==='programs')===(s.type==='programs')){p.append(sectionEditor(s,i,openIds));count++;}});if(!count)p.append(el('p','empty','لا توجد أقسام هنا بعد. أضف قسمًا للبدء.'));}
-function backup(){const p=panel('نسخة من عملك، دائمًا معك','التصدير ينزّل ملف JSON للإعدادات. الاستيراد يستبدل بيانات هذا المتصفح فقط بعد تأكيدك.');const actions=el('div','actions');actions.append(button('تصدير الإعدادات ↓',exportData,'button'));const input=el('input');input.type='file';input.accept='.json,application/json';input.id='importFile';input.onchange=async()=>{const f=input.files[0];if(!f)return;try{if(f.size>1000000)throw Error('حجم الملف كبير.');const data=JSON.parse(await f.text());if(!S.validate(data))throw Error('صيغة الإعدادات غير صالحة.');if(!confirm('استبدال البيانات الحالية؟'))return;const old=site;site=data;blocked=false;if(!save()){site=old;return;}render();}catch(e){fail('تعذّر الاستيراد: '+e.message);}finally{input.value='';}};const label=el('label','file-label','استيراد ملف الإعدادات');label.htmlFor=input.id;actions.append(label,input);p.append(actions);const reset=panel('استعادة المحتوى الافتراضي','صدّر نسخة أولًا إذا أردت الاحتفاظ بتعديلاتك.');reset.append(button('استعادة المحتوى الافتراضي',()=>{if(confirm('استبدال بيانات الموقع المحلية بالمحتوى الافتراضي؟')){const old=site;site=S.defaults();blocked=false;if(!save()){site=old;return;}render();}},'delete'));}
-function exportData(){const url=URL.createObjectURL(new Blob([JSON.stringify(site,null,2)],{type:'application/json'})),a=link('','',null);a.href=url;a.download='madar-site-settings.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
-function render(openIds){openIds=openIds||new Set([...document.querySelectorAll('details[open]')].map(x=>x.dataset.id));$('editor').replaceChildren();if(page==='overview')overview();else if(page==='identity')identity();else if(page==='contact')contact();else if(page==='backup')backup();else sections(openIds);$('editor').disabled=blocked;S.apply(site,theme);}
-$('saveNow').onclick=save;$('exportDraft').onclick=exportData;$('theme').onclick=()=>{theme=theme==='dark'?'light':'dark';S.setPref('theme',theme);S.apply(site,theme);$('theme').setAttribute('aria-pressed',String(theme==='dark'));};$('navToggle').onclick=()=>{const open=document.body.classList.toggle('nav-open');$('navToggle').setAttribute('aria-expanded',String(open));};
-document.addEventListener('keydown',e=>{if(e.key==='Escape'){document.body.classList.remove('nav-open');$('navToggle').setAttribute('aria-expanded','false');}});
-$('editorForm').onsubmit=e=>{e.preventDefault();save();};
-document.querySelectorAll('a[href]').forEach(a=>a.addEventListener('click',e=>{if(dirty&&!save()&&!confirm('التعديلات لم تُحفظ. هل تريد مغادرة الصفحة؟'))e.preventDefault();}));
-window.addEventListener('beforeunload',e=>{if(dirty){e.preventDefault();e.returnValue='';}});
-window.addEventListener('storage',e=>{if(e.key!==S.key&&e.key!==null)return;if(dirty){blocked=true;clearTimeout(timer);$('editor').disabled=true;fail('تغيّرت البيانات من نافذة أخرى. صدّر مسودتك من زر «تصدير المسودة» ثم أعد تحميل الصفحة.');notice('توقف الحفظ لتجنب استبدال تعديلاتك');return;}try{site=S.load();render();notice('تم تحميل التحديث من نافذة أخرى.');}catch(_){blocked=true;$('editor').disabled=true;fail('تعذّر قراءة البيانات الجديدة. أعد تحميل الصفحة.');}});
-try{site=S.load();notice('جاهز · حفظ تلقائي');}catch(_){site=S.defaults();blocked=true;fail('تعذّر قراءة التخزين؛ لم تُستبدل بياناتك. تحقق من إعدادات المتصفح.');notice('تعذّر تحميل البيانات');}
-render();$('theme').setAttribute('aria-pressed',String(theme==='dark'));
+(function () {
+  'use strict';
+
+  // حالة الصفحة والبيانات المشتركة مع الموقع.
+  const siteStore = MadarSite;
+  const getElement = (id) => document.getElementById(id);
+  const currentPage = document.body.dataset.page;
+  let siteSettings;
+  let hasUnsavedChanges = false;
+  let autoSaveTimer;
+  let isEditingBlocked = false;
+  let selectedTheme = siteStore.pref('theme', 'light');
+  let fieldCounter = 0;
+  const createElement = (tagName, className, text) => {
+    const element = document.createElement(tagName);
+    if (className) {
+      element.className = className;
+    }
+    if (text !== undefined) {
+      element.textContent = text;
+    }
+    return element;
+  };
+  function updateSaveStatus(text) {
+    getElement('status').textContent = text;
+  }
+  function showError(text) {
+    getElement('error').hidden = !text;
+    getElement('error').textContent = text;
+  }
+  // التحقق والحفظ التلقائي.
+  function saveChanges() {
+    clearTimeout(autoSaveTimer);
+    if (isEditingBlocked) {
+      return false;
+    }
+    if (
+      siteStore.contrast(siteSettings.colors.navy, siteSettings.colors.white) < 4.5 ||
+      siteStore.contrast(siteSettings.colors.navy, siteSettings.colors.lime) < 4.5
+    ) {
+      showError('ألوان النص والخلفيات بحاجة لتباين أوضح. لم يتم الحفظ.');
+      return false;
+    }
+    if (
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(siteSettings.contact.email) ||
+      (siteSettings.contact.whatsapp && !/^\d{8,15}$/.test(siteSettings.contact.whatsapp))
+    ) {
+      showError('تحقق من البريد ورقم واتساب الدولي (8 إلى 15 رقمًا، أو اتركه فارغًا).');
+      return false;
+    }
+    try {
+      siteStore.save(siteSettings);
+      hasUnsavedChanges = false;
+      showError('');
+      updateSaveStatus(
+        '✓ محفوظ محليًا · ' +
+          new Date().toLocaleTimeString('ar', {
+            hour: '2-digit',
+            minute: '2-digit',
+          }),
+      );
+      siteStore.apply(siteSettings, selectedTheme);
+      return true;
+    } catch (_) {
+      showError('تعذّر الحفظ؛ صدّر نسخة من تعديلاتك وتحقق من إعدادات التخزين.');
+      return false;
+    }
+  }
+  function scheduleSave() {
+    hasUnsavedChanges = true;
+    updateSaveStatus('جارٍ حفظ التعديلات…');
+    clearTimeout(autoSaveTimer);
+    autoSaveTimer = setTimeout(saveChanges, 450);
+  }
+  // أدوات صغيرة لبناء الحقول والأزرار دون تكرار.
+  function createButton(text, onClick, className = 'small-button') {
+    const buttonElement = createElement('button', className, text);
+    buttonElement.type = 'button';
+    buttonElement.onclick = onClick;
+    return buttonElement;
+  }
+  function createLink(text, url, className) {
+    const linkElement = createElement('a', className, text);
+    linkElement.href = url;
+    return linkElement;
+  }
+  function createField(
+    label,
+    value,
+    onChange,
+    { multi: isMultiline = false, type = 'text', dir: direction } = {},
+  ) {
+    const labelElement = createElement('label', 'field', label);
+    const inputElement = createElement(isMultiline ? 'textarea' : 'input');
+    inputElement.id = 'field-' + ++fieldCounter;
+    if (!isMultiline) {
+      inputElement.type = type;
+    }
+    inputElement.value = value;
+    inputElement.maxLength = isMultiline ? 6000 : 300;
+    if (isMultiline) {
+      inputElement.rows = 3;
+    }
+    if (direction) {
+      inputElement.dir = direction;
+    }
+    inputElement.oninput = () => {
+      onChange(inputElement.value);
+      scheduleSave();
+    };
+    labelElement.append(inputElement);
+    return labelElement;
+  }
+  function addBilingualFields(target, label, value, multi = false) {
+    const fieldGroup = createElement('div', 'pair');
+    fieldGroup.append(
+      createField(label + ' · العربية', value.ar, (v) => (value.ar = v), {
+        multi,
+        dir: 'rtl',
+      }),
+      createField(label + ' · English', value.en, (v) => (value.en = v), {
+        multi,
+        dir: 'ltr',
+      }),
+    );
+    target.append(fieldGroup);
+  }
+  function createVisibilityToggle(text, value, onChange) {
+    const labelElement = createElement('label', 'check');
+    const checkbox = createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.checked = value;
+    checkbox.onchange = () => {
+      onChange(checkbox.checked);
+      saveAndRender();
+    };
+    labelElement.append(checkbox, createElement('span', '', text));
+    return labelElement;
+  }
+  function createPanel(title, subtitle) {
+    const panelElement = createElement('section', 'panel');
+    panelElement.append(createElement('h2', '', title));
+    if (subtitle) {
+      panelElement.append(createElement('p', 'muted', subtitle));
+    }
+    getElement('editor').append(panelElement);
+    return panelElement;
+  }
+  function saveAndRender() {
+    hasUnsavedChanges = true;
+    saveChanges();
+    renderPage();
+  }
+  // كل دالة تالية مسؤولة عن صفحة واحدة في لوحة التحكم.
+  function renderStatistics() {
+    const g = createElement('div', 'stats');
+    const programs = siteSettings.sections
+      .filter((s) => s.type === 'programs')
+      .flatMap((s) => s.items);
+    for (const [name, n, caption] of [
+      ['أقسام الموقع', siteSettings.sections.length, 'محتوى قابل للتحرير'],
+      ['برامج تدريبية', programs.length, 'بما فيها المسودات'],
+      [
+        'برامج ظاهرة',
+        siteSettings.sections
+          .filter((s) => s.type === 'programs' && s.published)
+          .flatMap((s) => s.items)
+          .filter((p) => p.published).length,
+        'ضمن أقسام ظاهرة',
+      ],
+      [
+        'أقسام ظاهرة',
+        siteSettings.sections.filter((s) => s.published).length,
+        'في الصفحة الرئيسية',
+      ],
+    ]) {
+      const a = createElement('article', 'stat');
+      a.append(
+        createElement('span', '', name),
+        createElement('strong', '', String(n)),
+        createElement('small', '', caption),
+      );
+      g.append(a);
+    }
+    getElement('editor').append(g);
+  }
+  function renderOverview() {
+    renderStatistics();
+    const g = createElement('div', 'quick-grid');
+    for (const [href, icon, title, body] of [
+      [
+        'programs.html',
+        '▤',
+        'برامجك، في مكان واحد',
+        'أضف البرامج وحرّر تفاصيلها وحالة ظهورها.',
+      ],
+      [
+        'content.html',
+        '✳',
+        'محتوى يصنع الفرق',
+        'عدّل الواجهة والأقسام، ورتّب قصتك كما تريد.',
+      ],
+      ['identity.html', '◈', 'هوية تشبه مدار تك', 'لوحة ألوان موحدة واسم ووصف للمؤسسة.'],
+      ['contact.html', '↗', 'تواصل أسهل', 'اضبط البريد وواتساب والعنوان.'],
+    ]) {
+      const a = createLink('', href, 'quick-card');
+      a.append(
+        createElement('span', 'quick-icon', icon),
+        createElement('h2', '', title),
+        createElement('p', 'muted', body),
+        createElement('span', 'quick-arrow', '↗'),
+      );
+      g.append(a);
+    }
+    getElement('editor').append(g);
+    const p = createPanel(
+      'محتوى الموقع الآن',
+      'انتقل إلى صفحة المحتوى لتغيير ترتيب الأقسام أو ظهورها.',
+    );
+    for (const s of siteSettings.sections) {
+      const r = createElement('div', 'overview-row');
+      r.append(
+        createElement('strong', '', s.nav.ar || s.nav.en),
+        createElement('span', 'badge', s.published ? 'ظاهر' : 'مسودة'),
+      );
+      p.append(r);
+    }
+  }
+  function renderIdentity() {
+    const p = createPanel(
+      'ألوان الهوية',
+      'تُطبّق الألوان بعد حفظها تلقائيًا، مع التحقق من تباين النص.',
+    );
+    const g = createElement('div', 'color-grid');
+    for (const [k, label] of [
+      ['navy', 'الكحلي'],
+      ['white', 'الأبيض'],
+      ['lime', 'الأخضر الليموني'],
+    ])
+      g.append(
+        createField(label, siteSettings.colors[k], (v) => (siteSettings.colors[k] = v), {
+          type: 'color',
+        }),
+      );
+    p.append(g);
+    const b = createPanel('اسم المؤسسة ووصفها');
+    addBilingualFields(b, 'اسم المؤسسة', siteSettings.brand);
+    addBilingualFields(b, 'وصف التذييل', siteSettings.tagline, true);
+  }
+  function renderContact() {
+    const p = createPanel(
+      'قنوات التواصل',
+      'رقم واتساب دولي دون +. عند تركه فارغًا يستخدم نموذج التواصل البريد الإلكتروني.',
+    );
+    p.append(
+      createField(
+        'البريد الإلكتروني',
+        siteSettings.contact.email,
+        (v) => (siteSettings.contact.email = v),
+        {
+          type: 'email',
+          dir: 'ltr',
+        },
+      ),
+      createField(
+        'رقم واتساب',
+        siteSettings.contact.whatsapp,
+        (v) => (siteSettings.contact.whatsapp = v),
+        {
+          type: 'tel',
+          dir: 'ltr',
+        },
+      ),
+      createField(
+        'رابط Instagram',
+        siteSettings.contact.instagram,
+        (v) => (siteSettings.contact.instagram = v),
+        {
+          type: 'url',
+          dir: 'ltr',
+        },
+      ),
+    );
+    addBilingualFields(p, 'العنوان', siteSettings.contact.address);
+  }
+  // محرر القسم وبطاقاته، مستخدم في صفحتي البرامج والمحتوى.
+  function createSectionEditor(section, index, openIds) {
+    const details = createElement('details', 'section-editor');
+    details.dataset.id = section.id;
+    details.open = openIds.has(section.id);
+    const summary = createElement('summary');
+    summary.append(
+      createElement('strong', '', section.nav.ar || section.nav.en || 'قسم جديد'),
+      createElement('span', 'badge', section.published ? 'ظاهر' : 'مسودة'),
+    );
+    details.append(summary);
+    const body = createElement('div', 'section-body');
+    const actions = createElement('div', 'actions');
+    actions.append(
+      createVisibilityToggle(
+        'إظهار القسم',
+        section.published,
+        (v) => (section.published = v),
+      ),
+    );
+    const up = createButton('↑', () => {
+      [siteSettings.sections[index - 1], siteSettings.sections[index]] = [
+        siteSettings.sections[index],
+        siteSettings.sections[index - 1],
+      ];
+      saveAndRender();
+    });
+    up.disabled = index === 0;
+    up.setAttribute('aria-label', 'نقل القسم للأعلى');
+    const down = createButton('↓', () => {
+      [siteSettings.sections[index + 1], siteSettings.sections[index]] = [
+        siteSettings.sections[index],
+        siteSettings.sections[index + 1],
+      ];
+      saveAndRender();
+    });
+    down.disabled = index === siteSettings.sections.length - 1;
+    down.setAttribute('aria-label', 'نقل القسم للأسفل');
+    actions.append(
+      up,
+      down,
+      createButton(
+        'حذف القسم',
+        () => {
+          if (confirm('حذف القسم وجميع بطاقاته؟')) {
+            siteSettings.sections.splice(index, 1);
+            saveAndRender();
+          }
+        },
+        'delete',
+      ),
+    );
+    body.append(actions);
+    addBilingualFields(body, 'اسم القسم', section.nav);
+    addBilingualFields(body, 'العنوان', section.title, true);
+    addBilingualFields(body, 'الوصف', section.body, true);
+    if (section.type !== 'contact') {
+      body.append(
+        createElement(
+          'h3',
+          '',
+          section.type === 'programs' ? 'البرامج التدريبية' : 'البطاقات',
+        ),
+      );
+      section.items.forEach((item, n) => {
+        const card = createElement('article', 'item-editor');
+        const tools = createElement('div', 'actions');
+        tools.append(
+          createElement(
+            'strong',
+            '',
+            (section.type === 'programs' ? 'برنامج ' : 'بطاقة ') + (n + 1),
+          ),
+          createVisibilityToggle('ظاهر', item.published, (v) => (item.published = v)),
+          createButton(
+            'حذف',
+            () => {
+              if (confirm('حذف هذه البطاقة؟')) {
+                section.items.splice(n, 1);
+                saveAndRender();
+              }
+            },
+            'delete',
+          ),
+        );
+        card.append(tools);
+        addBilingualFields(card, 'العنوان', item.title);
+        addBilingualFields(card, 'المحتوى', item.body, true);
+        body.append(card);
+      });
+      const add = createButton(
+        section.type === 'programs' ? '＋ إضافة برنامج' : '＋ إضافة بطاقة',
+        () => {
+          section.items.push({
+            id: 'item-' + crypto.randomUUID(),
+            title: siteStore.pair('عنوان جديد', 'New title'),
+            body: siteStore.pair('اكتب المحتوى.', 'Write your content.'),
+            published: false,
+          });
+          saveAndRender();
+        },
+        'button secondary',
+      );
+      add.disabled = section.items.length >= 60;
+      body.append(add);
+    }
+    details.append(body);
+    return details;
+  }
+  function renderContentSections(openIds) {
+    if (currentPage === 'content') {
+      const h = createPanel('الواجهة الرئيسية');
+      addBilingualFields(h, 'عبارة قصيرة', siteSettings.hero.eyebrow);
+      addBilingualFields(h, 'العنوان الرئيسي', siteSettings.hero.title, true);
+      addBilingualFields(h, 'الوصف الرئيسي', siteSettings.hero.body, true);
+    }
+    const contentPanel = createPanel(
+      currentPage === 'programs' ? 'إدارة البرامج التدريبية' : 'إدارة أقسام الموقع',
+      'الأقسام والبطاقات الجديدة تُضاف كمسودات؛ فعّل ظهورها عندما تكون جاهزة.',
+    );
+    const actions = createElement('div', 'add-section');
+    const select = createElement('select');
+    select.setAttribute('aria-label', 'نوع القسم');
+    for (const [k, label] of currentPage === 'programs'
+      ? [['programs', 'مجموعة برامج']]
+      : [
+          ['text', 'قسم نصي'],
+          ['cards', 'خدمات'],
+          ['about', 'من نحن'],
+          ['features', 'مميزات'],
+          ['contact', 'تواصل'],
+        ]) {
+      const o = createElement('option', '', label);
+      o.value = k;
+      select.append(o);
+    }
+    const add = createButton(
+      '＋ إضافة قسم',
+      () => {
+        const s = {
+          id: 'section-' + crypto.randomUUID(),
+          type: select.value,
+          nav: siteStore.pair('قسم جديد', 'New section'),
+          title: siteStore.pair('عنوان جديد', 'New title'),
+          body: siteStore.pair('وصف القسم.', 'Section description.'),
+          published: false,
+          items: [],
+        };
+        siteSettings.sections.push(s);
+        openIds.add(s.id);
+        hasUnsavedChanges = true;
+        saveChanges();
+        renderPage(openIds);
+      },
+      'button',
+    );
+    add.disabled = siteSettings.sections.length >= 30;
+    actions.append(select, add);
+    contentPanel.append(actions);
+    let count = 0;
+    siteSettings.sections.forEach((s, i) => {
+      if ((currentPage === 'programs') === (s.type === 'programs')) {
+        contentPanel.append(createSectionEditor(s, i, openIds));
+        count++;
+      }
+    });
+    if (!count) {
+      contentPanel.append(
+        createElement('p', 'empty', 'لا توجد أقسام هنا بعد. أضف قسمًا للبدء.'),
+      );
+    }
+  }
+  function renderBackup() {
+    const p = createPanel(
+      'نسخة من عملك، دائمًا معك',
+      'التصدير ينزّل ملف JSON للإعدادات. الاستيراد يستبدل بيانات هذا المتصفح فقط بعد تأكيدك.',
+    );
+    const actions = createElement('div', 'actions');
+    actions.append(createButton('تصدير الإعدادات ↓', exportSettings, 'button'));
+    const input = createElement('input');
+    input.type = 'file';
+    input.accept = '.json,application/json';
+    input.id = 'importFile';
+    input.onchange = async () => {
+      const f = input.files[0];
+      if (!f) {
+        return;
+      }
+      try {
+        if (f.size > 1000000) {
+          throw Error('حجم الملف كبير.');
+        }
+        const data = JSON.parse(await f.text());
+        if (!siteStore.validate(data)) {
+          throw Error('صيغة الإعدادات غير صالحة.');
+        }
+        if (!confirm('استبدال البيانات الحالية؟')) {
+          return;
+        }
+        const old = siteSettings;
+        siteSettings = data;
+        isEditingBlocked = false;
+        if (!saveChanges()) {
+          siteSettings = old;
+          return;
+        }
+        renderPage();
+      } catch (e) {
+        showError('تعذّر الاستيراد: ' + e.message);
+      } finally {
+        input.value = '';
+      }
+    };
+    const label = createElement('label', 'file-label', 'استيراد ملف الإعدادات');
+    label.htmlFor = input.id;
+    actions.append(label, input);
+    p.append(actions);
+    const reset = createPanel(
+      'استعادة المحتوى الافتراضي',
+      'صدّر نسخة أولًا إذا أردت الاحتفاظ بتعديلاتك.',
+    );
+    reset.append(
+      createButton(
+        'استعادة المحتوى الافتراضي',
+        () => {
+          if (confirm('استبدال بيانات الموقع المحلية بالمحتوى الافتراضي؟')) {
+            const old = siteSettings;
+            siteSettings = siteStore.defaults();
+            isEditingBlocked = false;
+            if (!saveChanges()) {
+              siteSettings = old;
+              return;
+            }
+            renderPage();
+          }
+        },
+        'delete',
+      ),
+    );
+  }
+  function exportSettings() {
+    const url = URL.createObjectURL(
+      new Blob([JSON.stringify(siteSettings, null, 2)], {
+        type: 'application/json',
+      }),
+    );
+    const downloadLink = createLink('', '', null);
+    downloadLink.href = url;
+    downloadLink.download = 'madar-site-settings.json';
+    downloadLink.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+  // اختيار الصفحة المطلوبة فقط، وليس إخفاء صفحات كاملة في HTML.
+  function renderPage(openIds) {
+    openIds =
+      openIds ||
+      new Set([...document.querySelectorAll('details[open]')].map((x) => x.dataset.id));
+    getElement('editor').replaceChildren();
+    if (currentPage === 'overview') {
+      renderOverview();
+    } else if (currentPage === 'identity') {
+      renderIdentity();
+    } else if (currentPage === 'contact') {
+      renderContact();
+    } else if (currentPage === 'backup') {
+      renderBackup();
+    } else {
+      renderContentSections(openIds);
+    }
+    getElement('editor').disabled = isEditingBlocked;
+    siteStore.apply(siteSettings, selectedTheme);
+  }
+  // ربط أحداث المستخدم والتنقل بين الصفحات.
+  getElement('saveNow').onclick = saveChanges;
+  getElement('exportDraft').onclick = exportSettings;
+  getElement('theme').onclick = () => {
+    selectedTheme = selectedTheme === 'dark' ? 'light' : 'dark';
+    siteStore.setPref('theme', selectedTheme);
+    siteStore.apply(siteSettings, selectedTheme);
+    getElement('theme').setAttribute('aria-pressed', String(selectedTheme === 'dark'));
+  };
+  getElement('navToggle').onclick = () => {
+    const open = document.body.classList.toggle('nav-open');
+    getElement('navToggle').setAttribute('aria-expanded', String(open));
+  };
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      document.body.classList.remove('nav-open');
+      getElement('navToggle').setAttribute('aria-expanded', 'false');
+    }
+  });
+  getElement('editorForm').onsubmit = (e) => {
+    e.preventDefault();
+    saveChanges();
+  };
+  document.querySelectorAll('a[href]').forEach((a) =>
+    a.addEventListener('click', (e) => {
+      if (
+        hasUnsavedChanges &&
+        !saveChanges() &&
+        !confirm('التعديلات لم تُحفظ. هل تريد مغادرة الصفحة؟')
+      ) {
+        e.preventDefault();
+      }
+    }),
+  );
+  window.addEventListener('beforeunload', (e) => {
+    if (hasUnsavedChanges) {
+      e.preventDefault();
+      e.returnValue = '';
+    }
+  });
+  // حماية التعديلات عند فتح اللوحة في أكثر من نافذة.
+  window.addEventListener('storage', (e) => {
+    if (e.key !== siteStore.key && e.key !== null) {
+      return;
+    }
+    if (hasUnsavedChanges) {
+      isEditingBlocked = true;
+      clearTimeout(autoSaveTimer);
+      getElement('editor').disabled = true;
+      showError(
+        'تغيّرت البيانات من نافذة أخرى. صدّر مسودتك من زر «تصدير المسودة» ثم أعد تحميل الصفحة.',
+      );
+      updateSaveStatus('توقف الحفظ لتجنب استبدال تعديلاتك');
+      return;
+    }
+    try {
+      siteSettings = siteStore.load();
+      renderPage();
+      updateSaveStatus('تم تحميل التحديث من نافذة أخرى.');
+    } catch (_) {
+      isEditingBlocked = true;
+      getElement('editor').disabled = true;
+      showError('تعذّر قراءة البيانات الجديدة. أعد تحميل الصفحة.');
+    }
+  });
+  try {
+    siteSettings = siteStore.load();
+    updateSaveStatus('جاهز · حفظ تلقائي');
+  } catch (_) {
+    siteSettings = siteStore.defaults();
+    isEditingBlocked = true;
+    showError('تعذّر قراءة التخزين؛ لم تُستبدل بياناتك. تحقق من إعدادات المتصفح.');
+    updateSaveStatus('تعذّر تحميل البيانات');
+  }
+  renderPage();
+  getElement('theme').setAttribute('aria-pressed', String(selectedTheme === 'dark'));
 })();
