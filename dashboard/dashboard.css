@@ -659,3 +659,29 @@ aside {
 aside > * {
   flex-shrink: 0;
 }
+
+/* The sidebar follows the language shared with the homepage. */
+html[dir='ltr'] aside {
+  right: auto;
+  left: 0;
+}
+html[dir='ltr'] main {
+  margin-right: 0;
+  margin-left: 250px;
+}
+@media (max-width: 1100px) {
+  html[dir='ltr'] main {
+    margin-left: 215px;
+  }
+}
+@media (max-width: 800px) {
+  html[dir='ltr'] main {
+    margin-left: 0;
+  }
+  html[dir='ltr'] aside {
+    transform: translateX(-105%);
+  }
+  html[dir='ltr'] body.nav-open aside {
+    transform: none;
+  }
+}
