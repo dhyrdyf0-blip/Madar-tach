@@ -87,7 +87,7 @@
     $('heroNote').textContent=ui[language].space;$('sceneTag').textContent=ui[language].tag;const services=firstType('cards');const visibleServices=services?services.items.filter(i=>i.published):[];$('floatOne').textContent=visibleServices[0]?t(visibleServices[0].title):ui[language].strip[0];$('floatTwo').textContent=visibleServices[1]?t(visibleServices[1].title):ui[language].strip[1];
     $('identityStrip').replaceChildren(...ui[language].strip.map(text=>node('span','',text)));
     $('sections').replaceChildren(...published().map(sectionView));animateSections();
-    $('footerTagline').textContent=t(site.tagline);$('dashboardLink').textContent=ui[language].dashboard;
+    $('footerTagline').textContent=t(site.tagline);$('dashboardLink').textContent=ui[language].dashboard;$('dashboardTopLink').textContent=ui[language].dashboard;
     $('footerEmail').textContent=site.contact.email;$('footerEmail').href='mailto:'+site.contact.email;
     $('instagram').href=/^https:\/\/(www\.)?instagram\.com\//i.test(site.contact.instagram)?site.contact.instagram:'https://www.instagram.com/';
     $('footerAddress').textContent=t(site.contact.address);$('copyright').textContent='© '+new Date().getFullYear()+' '+t(site.brand)+' · '+ui[language].copyright;
